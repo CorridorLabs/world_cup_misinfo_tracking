@@ -12,6 +12,9 @@ __pycache__/
 # json files
 *.json
 
+# 'data' dir 
+data/
+
 # Distribution / packaging
 .Python
 build/
