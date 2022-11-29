@@ -171,7 +171,7 @@ TWEETS_DIR = args.out_path
 META_DIR = args.meta_path
 KILL_TIME = args.kill_time
 
-SEARCH_TERMS = 'twitter_search_terms.txt'
+SEARCH_TERMS = args.search_terms
 
 # fields to return in tweets
 EXPANSTIONS = ['author_id', 'referenced_tweets.id']
