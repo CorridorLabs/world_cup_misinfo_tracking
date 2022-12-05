@@ -2,7 +2,7 @@
 # get_tweets.py
 
 # DATA COLLECTION: TWITTER
-# pulling tweets and relevant metadata from the twitter api
+# STREAMING tweets and relevant metadata from the twitter api
 # via the tweepy module for python.
 
 # logic/sequence:
