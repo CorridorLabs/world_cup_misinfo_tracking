@@ -3,6 +3,7 @@ world cup
 fifaworldcup
 fifa world cup
 qatar
+MERS
 #worldcup
 #fifaworldcup
 #qatar22
