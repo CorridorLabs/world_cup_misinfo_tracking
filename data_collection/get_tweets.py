@@ -280,7 +280,8 @@ class TweetStreamer(tweepy.StreamingClient):
             self.counter += 1
             obj = json.loads(data)
             tweet = obj['data']
-            del tweet['edit_history_tweet_ids']
+            if 'edit_history_tweet_ids' in tweet.keys():
+                del tweet['edit_history_tweet_ids']
 
             urls = extract_urls(tweet['text'])
             if len(urls)>0:
@@ -292,19 +293,7 @@ class TweetStreamer(tweepy.StreamingClient):
                                                                          domains_session=self.domains,
                                                                          entities_tweet=entities,
                                                                          entities_session=self.entities)
-                
-                # for domain in domains.keys():
-                #     if domain not in self.domains.keys():
-                #         self.domains[domain] = 1
-                #     else:
-                #         self.domains[domain] += 1
-
-                # for entity in entities.keys():
-                #     if entity not in self.entities.keys():
-                #         self.entities[entity] = 1
-                #     else:
-                #         self.entities[entity] += 1
-                
+                                
                 del tweet['context_annotations']
                 tweet['domains'] = domains
                 tweet['entities'] = entities
