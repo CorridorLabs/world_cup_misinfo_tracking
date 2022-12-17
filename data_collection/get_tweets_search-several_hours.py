@@ -14,8 +14,6 @@
 # NL, 17/12/22 -- updating the script to allow args to define 
 #                 1) n files/ iterations
 #                 2) start-time / end time
-#                 We will replace the chunking on to several files. Instead, 
-#                 this can then be done in a loop that iterates over this script.
 
 ############
 # IMPORTS
@@ -142,23 +140,6 @@ def extract_urls(tweet_text:str) -> list:
 parser = argparse.ArgumentParser(description='Parameters for getting tweets via search method.')
 
 # -a ACTION_TYPE
-parser.add_argument("-d", "--start_date", dest="start_date",
-                    help="""a date-string in the format YYYY-MM-DD
-                    for the day for which we want to search tweets""")
-
-parser.add_argument("-t", "--start_time", dest="start_time",
-                    help="""A time (of day) in string format denoting
-                    the time from which we want to begin collecting data""")
-
-parser.add_argument("-e", "--delta", dest="delta",
-                    help="""a number denoting the time period for which we
-                    want to collect tweets. an example would be `60`.""")
-
-parser.add_argument("-u", "--delta_unit", dest="delta_unit",
-                    default="minutes", 
-                    help="""the unit of time for which we want to do our 
-                    data collection. must be either `seconds`, `minutes` or `hours`.""")
-
 parser.add_argument("-s", "--search_terms", dest = "search_terms", 
                     default="twitter_search_terms.txt",
                     help="""path to txt file containing search terms
@@ -212,25 +193,6 @@ if not os.path.isdir(META_DIR):
 # DATETIME STUFF
 DT_TODAY = datetime.datetime.now()
 TODAY = DT_TODAY.strftime('%Y_%m_%d-%H_%M_%S')
-
-# formatting our time parameters for tweet data collection
-EARLIEST = date_parser.parse(f'{args.start_date} {args.start_time}')
-DELTA_INT = int(args.delta)
-
-if args.delta_unit=='minutes':
-    delta = datetime.timedelta(minutes=DELTA_INT)
-elif args.delta_unit=='hours':
-    delta = datetime.timedelta(hours=DELTA_INT)
-elif args.delta_unit=='seconds':
-    delta = datetime.timedelta(seconds=DELTA_INT)
-else:
-    raise ValueError(f'CLI argument `delta_unit` must be one `seconds`, `minutes`, `hours`')
-
-# TO DO:
-# - generate our dict with timings, filepaths, etc
-#       - here, we may have to change the logic from a dir to a file in args
-# - change the logic of the script -- we can get rid of the top-level loop and just 
-#   have a single loop that does the pagination.
 
 # outfiles
 # time stamps
