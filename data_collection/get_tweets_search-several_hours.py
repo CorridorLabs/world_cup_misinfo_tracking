@@ -11,9 +11,6 @@
 #   thing for us. RIGHT NOW, THIS IS BAKED INTO THE CODE.
 
 # NL, 05/12/22
-# NL, 17/12/22 -- updating the script to allow args to define 
-#                 1) n files/ iterations
-#                 2) start-time / end time
 
 ############
 # IMPORTS
