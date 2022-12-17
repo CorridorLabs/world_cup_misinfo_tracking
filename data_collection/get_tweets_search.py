@@ -6,10 +6,6 @@
 # via the tweepy module for python.
 # TWIST: using the search endpoint method via client
 
-# NOTES:
-# - add something that creates the start_time, end_time and filename
-#   thing for us. RIGHT NOW, THIS IS BAKED INTO THE CODE.
-
 # NL, 05/12/22
 # NL, 17/12/22 -- updating the script to allow args to define 
 #                 1) n files/ iterations
@@ -164,12 +160,10 @@ parser.add_argument("-s", "--search_terms", dest = "search_terms",
                     help="""path to txt file containing search terms
                     to filter the twitter stream by.""")
 
-parser.add_argument("-o", "--out_path", dest = "out_path", 
-                    default="../data/tweets/",
-                    help="directory to which to write tweets")
+parser.add_argument("-o", "--out_file", dest = "out_file",
+                    help="filepath to which to write tweets")
 
-parser.add_argument("-m", "--meta_path", dest = "meta_path", 
-                    default="../data/tweets_meta/",
+parser.add_argument("-m", "--meta_path", dest = "meta_path",
                     help="directory to which to write domain/entity metadata")
 
 parser.add_argument("-i", "--iterations", dest = "iterations", 
@@ -186,8 +180,8 @@ args = parser.parse_args()
 ############
 # PATHS & CONSTANTS
 ############
-TWEETS_DIR = args.out_path
-META_DIR = args.meta_path
+TWEETS_PATH = args.out_file
+META_PATH = args.meta_path
 ITS = args.iterations
 
 SEARCH_TERMS = args.search_terms
@@ -203,17 +197,20 @@ OUT_CORE_FIELDS = ['author_id', 'created_at', 'id', 'public_metrics', 'reference
 OUT_USER_FIELDS = ['created_at', 'description', 'id', 'location', 'name', 'public_metrics', 'username']
 
 # check our out dirs exist - create if no
-if not os.path.isdir(TWEETS_DIR):
-    os.mkdir(TWEETS_DIR)
-
-if not os.path.isdir(META_DIR):
-    os.mkdir(META_DIR)
+TWEETS_PATH = check_path_exists(TWEETS_PATH)
+if not os.path.isdir(META_PATH):
+    os.mkdir(META_PATH)
+if META_PATH[-1:]!='/':
+    META_PATH += '/'
 
 # DATETIME STUFF
 DT_TODAY = datetime.datetime.now()
 TODAY = DT_TODAY.strftime('%Y_%m_%d-%H_%M_%S')
 
 # formatting our time parameters for tweet data collection
+# START_DATE_DT = date_parser.parse(args.start_date)
+# START_DATE = START_DATE_DT.strftime('%Y-%m-%d')
+
 EARLIEST = date_parser.parse(f'{args.start_date} {args.start_time}')
 DELTA_INT = int(args.delta)
 
@@ -226,31 +223,9 @@ elif args.delta_unit=='seconds':
 else:
     raise ValueError(f'CLI argument `delta_unit` must be one `seconds`, `minutes`, `hours`')
 
-# TO DO:
-# - generate our dict with timings, filepaths, etc
-#       - here, we may have to change the logic from a dir to a file in args
-# - change the logic of the script -- we can get rid of the top-level loop and just 
-#   have a single loop that does the pagination.
-
-# outfiles
-# time stamps
-# we want to generate a list of dicts with 8 entries. for each entry we will have these keys: filename, start_time, end_time
-# NOTE: THIS NEEDS TO BE UPDATED WITH A CLI-DERIVED APPROACH.
-earliest = date_parser.parse('2022-12-04 17:00:01')
-delta = datetime.timedelta(minutes=59)
-time_chunks = []
-
-for i in range(7):
-    tmp = {
-        'start_time' : earliest,
-        'end_time' : earliest+delta,
-        'tweets_path' : TWEETS_DIR+'tweets_'+earliest.strftime('%Y_%m_%d-%H_%M_%S')+'.json',
-        'entities_path' : META_DIR+'entities_'+earliest.strftime('%Y_%m_%d-%H_%M_%S')+'.json',
-        'domains_path' : META_DIR+'domains_'+earliest.strftime('%Y_%m_%d-%H_%M_%S')+'.json'
-    }
-
-    time_chunks.append(tmp)
-    earliest = earliest + datetime.timedelta(hours=1)
+# meta filepaths
+ENTITIES_PATH = META_PATH+'entities_'+EARLIEST.strftime('%Y_%m_%d-%H_%M_%S')+'.json'
+DOMAINS_PATH = META_PATH+'domains_'+EARLIEST.strftime('%Y_%m_%d-%H_%M_%S')+'.json'
 
 # logging
 LOG_FILE_PATH = f'../data/logfiles/twitter/twitter_search_{TODAY}.log'
@@ -290,107 +265,98 @@ logger = logging.getLogger('LOGGER')
 # instantiate our client
 client = tweepy.Client(bearer_token=bearer_token, wait_on_rate_limit=True)
 
-# we have a big loop here:
-# 1. loop around our chunk
-# 2. paginate for 1000 iterations on that chunk
-# 3. for each of those iterations, process every single tweet, and write out to file.
-# -- while we do this, log our progress. 
+# run our loop - writing out each tweet to our json file.
 n_tweets_total = 0
+it_counter = 0
 
-for chunk in time_chunks:
-    logging.info(f'Now collecting tweets from {chunk["start_time"]} to {chunk["end_time"]}.')
-    it_counter = 0
-    n_tweets_chunk = 0
+chunk_domains = {}
+chunk_entities = {}
 
-    chunk_domains = {}
-    chunk_entities = {}
+for tweets in tweepy.Paginator(client.search_recent_tweets, 
+                               query=search_terms,
+                               start_time=EARLIEST,
+                               end_time=EARLIEST+delta,
+                               expansions=EXPANSTIONS, 
+                               tweet_fields=TWEET_FIELDS,
+                               media_fields=MEDIA_FIELDS,
+                               user_fields=USER_FIELDS,
+                               max_results=100,
+                               limit=ITS):
+    it_counter += 1
+    logging.info(f'on page {it_counter} out of {ITS}. n tweets collected so far: {n_tweets_total}.')
 
-    for tweets in tweepy.Paginator(client.search_recent_tweets, 
-                                   query=search_terms,
-                                   start_time=chunk['start_time'],
-                                   end_time=chunk['end_time'],
-                                   expansions=EXPANSTIONS, 
-                                   tweet_fields=TWEET_FIELDS,
-                                   media_fields=MEDIA_FIELDS,
-                                   user_fields=USER_FIELDS,
-                                   max_results=100,
-                                   limit=ITS):
-        it_counter += 1
-        logging.info(f'on page {it_counter} out of {ITS}. n tweets collected in chunk so far: {n_tweets_chunk}. n tweets collected total so far: {n_tweets_total}')
-
-        for i in range(len(tweets[0])):
-            tmp_dict = tweets[0][i].data
-            author_id = tmp_dict['author_id']
-            tmp_user = {}
-            
-            try:
-                tmp_user = tweets[1]['users'][i].data
-                if tmp_user['id']!=author_id:
-                    logging.info(f'we have encountered a tweet-user mismatch in tweet {tmp_dict["id"]}. looking for correct user id')
-                    # we now need to find the correct user object in there
-                    for user_obj in tweets[1]['users']:
-                        if user_obj.data['id']==author_id:
-                            logging.info(f'found correct user object for tweet {tmp_dict["id"]}.')
-                            tmp_user = user_obj.data
-            except IndexError:
+    for i in range(len(tweets[0])):
+        tmp_dict = tweets[0][i].data
+        author_id = tmp_dict['author_id']
+        tmp_user = {}
+        
+        try:
+            tmp_user = tweets[1]['users'][i].data
+            if tmp_user['id']!=author_id:
+                logging.info(f'we have encountered a tweet-user mismatch in tweet {tmp_dict["id"]}. looking for correct user id')
+                # we now need to find the correct user object in there
                 for user_obj in tweets[1]['users']:
                     if user_obj.data['id']==author_id:
                         logging.info(f'found correct user object for tweet {tmp_dict["id"]}.')
                         tmp_user = user_obj.data
-            
-            if 'id' in tmp_user.keys():
-                if tmp_user['id']!=author_id:
-                    tmp_user = {'not available'}
-                    logging.info(f'unable to find correct user object for tweet {tmp_dict["id"]}.')
+        except IndexError:
+            for user_obj in tweets[1]['users']:
+                if user_obj.data['id']==author_id:
+                    logging.info(f'found correct user object for tweet {tmp_dict["id"]}.')
+                    tmp_user = user_obj.data
+        
+        if 'id' in tmp_user.keys():
+            if tmp_user['id']!=author_id:
+                tmp_user = {'not available'}
+                logging.info(f'unable to find correct user object for tweet {tmp_dict["id"]}.')
 
-            out = {}
-            for field in OUT_CORE_FIELDS:
-                if field in tmp_dict:
-                    out[field] = tmp_dict[field]
+        out = {}
+        for field in OUT_CORE_FIELDS:
+            if field in tmp_dict:
+                out[field] = tmp_dict[field]
 
-            urls = extract_urls(tmp_dict['text'])
-            if len(urls)>0:
-                out['urls'] = urls
+        urls = extract_urls(tmp_dict['text'])
+        if len(urls)>0:
+            out['urls'] = urls
 
-            # extract domain and entity counts
-            if 'context_annotations' in tmp_dict.keys():
-                logging.info(f'extracting domain and entity counts for tweet {tmp_dict["id"]}')
-                domains, entities = extract_count_domains_entities(tmp_dict['context_annotations'])
-                out['domains'] = domains
-                out['entities'] = entities
+        # extract domain and entity counts
+        if 'context_annotations' in tmp_dict.keys():
+            logging.info(f'extracting domain and entity counts for tweet {tmp_dict["id"]}')
+            domains, entities = extract_count_domains_entities(tmp_dict['context_annotations'])
+            out['domains'] = domains
+            out['entities'] = entities
 
-                chunk_domains, chunk_entities = total_domain_entity_counts(domains_tweet=domains,
-                                                                           domains_session=chunk_domains,
-                                                                           entities_tweet=entities,
-                                                                           entities_session=chunk_entities)
+            chunk_domains, chunk_entities = total_domain_entity_counts(domains_tweet=domains,
+                                                                       domains_session=chunk_domains,
+                                                                       entities_tweet=entities,
+                                                                       entities_session=chunk_entities)
 
-            # add user stuff
-            user = {}
-            if tmp_user!={'not available'}:
-                for field in OUT_USER_FIELDS:
-                    if field in tmp_user:
-                        user[field] = tmp_user[field]
+        # add user stuff
+        user = {}
+        if tmp_user!={'not available'}:
+            for field in OUT_USER_FIELDS:
+                if field in tmp_user:
+                    user[field] = tmp_user[field]
 
-                out['user'] = user
-            else:
-                out['user'] = tmp_user
+            out['user'] = user
+        else:
+            out['user'] = tmp_user
 
-            with open(chunk['tweets_path'], 'a') as o:
-                o.write(json.dumps(out)+'\n')
+        with open(TWEETS_PATH, 'a') as o:
+            o.write(json.dumps(out)+'\n')
 
-            n_tweets_chunk += 1
-            n_tweets_total += 1
+        n_tweets_total += 1
 
-    logging.info(f'Completed pulling tweets for chunk starting {chunk["start_time"]}')
+logging.info(f'Completed pulling tweets for chunk starting {EARLIEST}')
 
-    logging.info(f'Now writing out domain and entity counts for the chunk of tweets starting {chunk["start_time"]}')
-    chunk_domains = dict(sorted(chunk_domains.items(), key=lambda x:x[1], reverse=True))
-    chunk_entities = dict(sorted(chunk_entities.items(), key=lambda x:x[1], reverse=True))
+logging.info(f'Now writing out domain and entity counts for the chunk of tweets starting {EARLIEST}')
+chunk_domains = dict(sorted(chunk_domains.items(), key=lambda x:x[1], reverse=True))
+chunk_entities = dict(sorted(chunk_entities.items(), key=lambda x:x[1], reverse=True))
 
-    with open(chunk['domains_path'], 'w') as o:
-        o.write(json.dumps(chunk_domains))
+with open(DOMAINS_PATH, 'w') as o:
+    o.write(json.dumps(chunk_domains))
 
-    with open(chunk['entities_path'], 'w') as o:
-        o.write(json.dumps(chunk_entities))
+with open(ENTITIES_PATH, 'w') as o:
+    o.write(json.dumps(chunk_entities))
 
 logging.info(f'Completed data collection from twitter search. Total tweets collected {n_tweets_total}.')
