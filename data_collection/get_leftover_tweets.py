@@ -12,6 +12,11 @@
 
 # NL, 05/12/22
 # NL, 19/12/22 -- updated to get the tweets for the final
+# NL, 21/12/22 -- slight amendment of `get_leftover_tweets`
+#                 core changes: 
+#                 - more its
+#                 - check if file already exists, take the timestamp from it
+#                   and use that timestamp as cutoff point.
 
 ############
 # IMPORTS
@@ -152,7 +157,7 @@ parser.add_argument("-m", "--meta_path", dest = "meta_path",
                     help="directory to which to write domain/entity metadata")
 
 parser.add_argument("-i", "--iterations", dest = "iterations", 
-                    default=1000,
+                    default=10000,
                     help="""number of iterations/pages to run through""")
 
 parser.add_argument("-l", "--log_to_stdout", dest = "log_to_stdout", 
@@ -196,7 +201,7 @@ TODAY = DT_TODAY.strftime('%Y_%m_%d-%H_%M_%S')
 # time stamps
 # we want to generate a list of dicts with 8 entries. for each entry we will have these keys: filename, start_time, end_time
 # NOTE: THIS NEEDS TO BE UPDATED WITH A CLI-DERIVED APPROACH.
-earliest = date_parser.parse('2022-12-18 16:00:01')
+earliest = date_parser.parse('2022-12-18 17:00:01')
 delta = datetime.timedelta(minutes=59)
 time_chunks = []
 
@@ -264,6 +269,27 @@ for chunk in time_chunks:
 
     chunk_domains = {}
     chunk_entities = {}
+
+    # NEW: see if our current file exists. and get the last line.
+    try:
+        with open(chunk['tweets_path']) as infile:
+            for line in infile:
+                pass
+            recent_tweet = json.loads(line)
+
+        # we have our tweet. let's extract the timestamp
+        chunk['end_time'] = date_parser.parse(recent_tweet['created_at']) 
+
+        # let's also read in our chunk_domains and chunk_entities as we 
+        # don't want to lose what we had here
+        with open(chunk['domains_path'], 'r') as infile:
+            chunk_domains = json.load(infile)
+
+        with open(chunk['entities_path'], 'r') as infile:
+            chunk_entities = json.load(infile)
+
+    except FileNotFoundError:
+        logging.info('No previous file exists. Creating a new one.')
 
     for tweets in tweepy.Paginator(client.search_recent_tweets, 
                                    query=search_terms,

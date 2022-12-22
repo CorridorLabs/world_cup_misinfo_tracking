@@ -1,18 +1,16 @@
 #!/usr/bin/env python
-# get_mers_tweets.py
+# get_final_tweets.py
 
 # DATA COLLECTION: TWITTER
-# as part of our project, we're keen to get all 'mers'-related 
-# tweets for the week starting 10/12/22. 
+# pulling all the relevant tweets for the world cup final 
+# on 18/12/22 -- retroactively as there was an issue with 
+# the server during target collection
 
 # we will achieve this by wrapping a bunch of shell-commands
 # called through os.system in order to loop over our
 # `get_tweets_search.py` script with our target params.
 
-# NL, 17/12/22
-# NL, 19/12/22 -- slightly amending this to pull some missing tweets.
-#                 if something is needed, just change in the paths/constants
-
+# NL, 19/12/22 -- adapting from `get_mers_tweets.py` -- abandoned for now
 
 ############
 # IMPORTS
@@ -24,14 +22,14 @@ import datetime
 ############
 # PATHS & CONSTANTS
 ############
-TWEETS_DIR = '/home/nikloynes/projects/world_cup_misinfo_tracking/data/mers_tweets/'
-META_DIR = '/home/nikloynes/projects/world_cup_misinfo_tracking/data/mers_tweets/meta/'
-SEARCH_TERMS = '/home/nikloynes/projects/world_cup_misinfo_tracking/data_collection/mers_search_terms.txt'
-N_DAYS = 2
-START_DATE = '2022-12-16'
+TWEETS_DIR = '/home/nikloynes/projects/world_cup_misinfo_tracking/data/tweets/'
+META_DIR = '/home/nikloynes/projects/world_cup_misinfo_tracking/data/tweets_meta/'
+SEARCH_TERMS = '/home/nikloynes/projects/world_cup_misinfo_tracking/data_collection/twitter_search_terms.txt'
+N_ITS = 8
+START_DATE = '2022-12-18'
 DT_START_DATE = date_parser.parse(START_DATE) 
-START_TIME = '18:00'
-DELTA = 24
+START_TIME = '14:00'
+DELTA = 60
 DELTA_UNIT = 'hours'
 
 # dict of chunks
@@ -39,10 +37,18 @@ DELTA_UNIT = 'hours'
 # script get_tweets_search.py here.
 
 time_chunks = []
-for i in range(N_DAYS):
+for i in range(N_ITS):
+    # format our delta
+    if DELTA_UNIT=='hours':
+        delta = datetime.timedelta(hours=DELTA)
+    elif DELTA_UNIT=='minutes':
+        delta = datetime.timedelta(minutes=DELTA)
+    elif DELTA_UNIT=='seconds':
+        delta = datetime.timedelta(seconds=DELTA)
+
     # format our date
-    tmp_date = (DT_START_DATE+datetime.timedelta(i)).strftime('%Y_%m_%d')
-    tmp_date2 = (DT_START_DATE+datetime.timedelta(i)).strftime('%Y-%m-%d')
+    tmp_date = (DT_START_DATE+delta).strftime('%Y_%m_%d')
+    tmp_date2 = (DT_START_DATE+delta).strftime('%Y-%m-%d')
 
     tmp = {
         '-d' : tmp_date2,
@@ -50,7 +56,7 @@ for i in range(N_DAYS):
         '-e' : DELTA,
         '-u' : DELTA_UNIT,
         '-s' : SEARCH_TERMS,
-        '-o' : f'{TWEETS_DIR}mers_tweets_{tmp_date}.json',
+        '-o' : f'{TWEETS_DIR}tweets_{tmp_date}-.json',
         '-m' : META_DIR
     }
 
