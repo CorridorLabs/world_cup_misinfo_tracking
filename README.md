@@ -6,3 +6,6 @@ contains code for collecting code from Reddit and Twitter. There is Twitter code
 
 ### `analysis`
 contains jupyter notebooks analysing the collected tweets. If you're interested in replicating this code, please get in touch to access the data.
+
+### `playground`
+contains jupyter notebook used to develop data collection and analysis strategies. 
