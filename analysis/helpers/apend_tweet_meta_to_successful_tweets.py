@@ -71,10 +71,15 @@ retweeted_match_df = retweeted_match_df.rename(columns={'id' : 'tweet_id'})
 replied_match_df = pd.DataFrame(replied_to)
 replied_match_df = replied_match_df.rename(columns={'id' : 'tweet_id'})
 
+# out
+quoted_match_df.to_csv(EXPORT_PATH+'top_quoted_meta_tmp.csv', index=False)
+retweeted_match_df.to_csv(EXPORT_PATH+'top_retweeted_meta_tmp.csv', index=False)
+replied_match_df.to_csv(EXPORT_PATH+'top_replied_to_meta_tmp.csv', index=False)
+
 # merge with count dfs
-quoted_df = pd.read_csv(QUOTED_TWEETS_PATH)
-retweeted_df = pd.read_csv(RETWEETED_TWEETS_PATH)
-replied_to_df = pd.read_csv(REPLIED_TO_TWEETS_PATH)
+quoted_df = pd.read_csv(QUOTED_TWEETS_PATH).astype({'tweet_id' : str})
+retweeted_df = pd.read_csv(RETWEETED_TWEETS_PATH).astype({'tweet_id' : str})
+replied_to_df = pd.read_csv(REPLIED_TO_TWEETS_PATH).astype({'tweet_id' : str})
 
 quoted_df = quoted_df.merge(quoted_match_df, on='tweet_id', how='left')
 retweeted_df = retweeted_df.merge(retweeted_match_df, on='tweet_id', how='left')
