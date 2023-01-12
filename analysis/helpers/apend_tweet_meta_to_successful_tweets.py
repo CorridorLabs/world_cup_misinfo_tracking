@@ -53,13 +53,13 @@ for file in tqdm(tweet_files):
         tweets = [json.loads(line) for line in infile]
 
     for tweet in tweets:
-        if tweet['id'] in quoted_ids:
+        if str(tweet['id']) in quoted_ids:
             quoted.append(tweet)
 
-        if tweet['id'] in retweeted_ids:
+        if str(tweet['id']) in retweeted_ids:
             retweeted.append(tweet)
 
-        if tweet['id'] in replied_ids:
+        if str(tweet['id']) in replied_ids:
             replied_to.append(tweet)
 
 quoted_match_df = pd.DataFrame(quoted)
