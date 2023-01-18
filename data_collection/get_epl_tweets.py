@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# get_tweets.py
+# get_epl_tweets.py
 
 # DATA COLLECTION: TWITTER
 # STREAMING tweets and relevant metadata from the twitter api
@@ -9,6 +9,7 @@
 # - TO FILL IN
 
 # NL, 26/11/22
+# NL, 18/01/23 -- adapting `get_tweets.py` to work specifically for premier league search terms
 
 ############
 # IMPORTS
@@ -135,25 +136,25 @@ parser = argparse.ArgumentParser(description='Parameters for getting tweets.')
 
 # -a ACTION_TYPE
 parser.add_argument("-s", "--search_terms", dest = "search_terms", 
-                    default="twitter_search_terms.txt",
+                    default="pl_210123_searchterms.txt",
                     help="""path to txt file containing search terms
                     to filter the twitter stream by.""")
 
 parser.add_argument("-o", "--out_path", dest = "out_path", 
-                    default="../data/tweets/",
+                    default="../data/epl_tweets/210123/",
                     help="directory to which to write tweets")
 
 parser.add_argument("-m", "--meta_path", dest = "meta_path", 
-                    default="../data/tweets_meta/",
+                    default="../data/epl_tweets/210123/meta/",
                     help="directory to which to write tweets")
 
 parser.add_argument("-k", "--kill_time", dest = "kill_time", 
-                    default=59,
+                    default=3585,
                     help="""time after which streaming process is
                     to be killed""")
 
 parser.add_argument("-t", "--time_unit", dest = "time_unit",
-                    default='minutes',
+                    default='seconds',
                     help="""measurement of time for the kill-time
                     parameter - either `minutes` or `seconds`""")
 
@@ -169,7 +170,7 @@ args = parser.parse_args()
 ############
 TWEETS_DIR = args.out_path
 META_DIR = args.meta_path
-KILL_TIME = args.kill_time
+KILL_TIME = int(args.kill_time)
 
 SEARCH_TERMS = args.search_terms
 
@@ -189,12 +190,12 @@ if not os.path.isdir(META_DIR):
 # DATETIME STUFF
 DT_TODAY = datetime.datetime.now()
 TODAY = DT_TODAY.strftime('%Y_%m_%d-%H_%M_%S')
-OUTFILE = TWEETS_DIR+'tweets_'+TODAY+'.json'
-DOMAINS_FILE = META_DIR+'domains_'+TODAY+'.json'
-ENTITIES_FILE = META_DIR+'entities_'+TODAY+'.json'
+OUTFILE = TWEETS_DIR+'epl_tweets_'+TODAY+'.json'
+DOMAINS_FILE = META_DIR+'epl_domains_'+TODAY+'.json'
+ENTITIES_FILE = META_DIR+'epl_entities_'+TODAY+'.json'
 
 # logging
-LOG_FILE_PATH = f'../data/logfiles/twitter/{TODAY}.log'
+LOG_FILE_PATH = f'../data/logfiles/epl_tweets/{TODAY}.log'
 LOG_FORMAT = '%(asctime)s [%(filename)s:%(lineno)s - %(funcName)20s() ] - %(name)s - %(levelname)s - %(message)s'
 
 ############
