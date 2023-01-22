@@ -136,16 +136,16 @@ parser = argparse.ArgumentParser(description='Parameters for getting tweets.')
 
 # -a ACTION_TYPE
 parser.add_argument("-s", "--search_terms", dest = "search_terms", 
-                    default="pl_210123_searchterms.txt",
+                    default="pl_220123_searchterms.txt",
                     help="""path to txt file containing search terms
                     to filter the twitter stream by.""")
 
 parser.add_argument("-o", "--out_path", dest = "out_path", 
-                    default="../data/epl_tweets/210123/",
+                    default="../data/epl_tweets/220123/",
                     help="directory to which to write tweets")
 
 parser.add_argument("-m", "--meta_path", dest = "meta_path", 
-                    default="../data/epl_tweets/210123/meta/",
+                    default="../data/epl_tweets/220123/meta/",
                     help="directory to which to write tweets")
 
 parser.add_argument("-k", "--kill_time", dest = "kill_time", 
@@ -348,6 +348,8 @@ for item in search_terms:
         streamer.add_rules(tweepy.StreamRule(item))
     except tweepy.HTTPException:
         break
+
+logging.info(f'Rules now: {streamer.get_rules()}')
 
 # start filtering
 streamer.filter(
